@@ -1,11 +1,16 @@
 from bluepy.btle import Scanner, DefaultDelegate
 
-class scanner:
+class scanner(DefaultDelegate):
 
-    def __init__(self,_,_,_):
+
+
+    def __init__(self,_,_,_): # creation and initialization of object
         pass
-    super.__init__()
+        super.__init__(self)
 
+
+    def withDelegate(self): # to store  the reference of delegate object
+        pass
 
 
     def scan(self): # scan for ble devices
