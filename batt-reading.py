@@ -45,5 +45,6 @@ try:
         print 'ec000 ', data
 
 except Exception as e:
+
     print "Error %s" % str(e)
 
