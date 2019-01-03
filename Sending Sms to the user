@@ -1,0 +1,128 @@
+import requests
+import bluepy
+from bluepy.btle import DefaultDelegate, Peripheral
+import struct
+import json
+import time
+API_ENDPOINT = "https://mrxlgrnq4k.execute-api.eu-central-1.amazonaws.com/beta/putdata"
+API_ENDPOINT_SNS = "https://mrxlgrnq4k.execute-api.eu-central-1.amazonaws.com/mega/remainder "
+
+
+class batt_levelDelegate(DefaultDelegate): #This is a subclass of DefaultDelegate.DefaultDelegate is inherited from
+                                           #the base class which is a class of btle.py module which belongs to bluepy package.
+    def __init__(self):
+
+    def __init__(self):
+        self.data = None
+        self.num =0
+
+    def  handleNotification(self, cHandle, data):# This method is called by waitForNotification,once data is received.
+         self.num += 1
+         self.data = self.battery_level(data)#battery-level method will be called for comparing data.
+
+    @staticmethod
+    def battery_level(data): # this method will compare the data with 3 which is byte.
+        if len(data) == 3:
+            (_, _, batt) = struct.unpack('<BBB', data) # the data will be parsed here.
+
+            return batt
+        else:
+            return False
+
+
+class NewConnectionTest:  # this class is used for making the connection with the peripheral device.
+    def __init__(self, name="", mac_addr="", addr_type="public", iface=0):
+        self.p = Peripheral(mac_addr, addrType=addr_type, iface=iface)
+        self.bleDelegate = batt_levelDelegate()
+        self.p.withDelegate(self.bleDelegate) #br
+
+
+    def get_data(self):
+       # time.sleep(5)
+        self.p.waitForNotifications(1.0)
+        #        print ("Notification Recieved: ", self.name)
+        return self.bleDelegate.data,self.bleDelegate.num
+
+    def connect(self):
+        self.p.connect()
+
+
+
+    def disconnect(self):
+        self.p.disconnect()
+
+
+print('Connecting to ec70')
+
+
+
+# class thread(Thread):
+#
+#     def run(self):
+#         jsonData = {
+#             "deviceID": "ec03",
+#             "timestamp": str(time.time()),
+#             "info": {"battery-level": data
+#                      }}
+#         print(jsonData)
+#         r = requests.post(url=API_ENDPOINT, data=json.dumps(jsonData))
+#         # r = requests.post(url=API_ENDPOINT, data=json.dumps(data))
+#         #  print(data)
+#         print(r.text)
+
+
+#call = thread()
+#call.start()
+#threads = []
+lastNum= 0
+
+try:
+    #a = NewConnectionTest(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+   # con = NewConnectionTest(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+    discon = NewConnectionTest(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+   # con = NewConnectionTest(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+   # discon = NewConnectionTest(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+    #    for i in range(0,3):
+    while True:
+        # a = NewConnectionTest(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+        #discon.connect()
+        #time.sleep(1)
+
+        data, num = discon.get_data()
+        if num > lastNum:
+            print( 'ec000 ', data)
+            lastNum=num
+           # for thread in threads:
+             #   if not thread.is_alive():
+            # call.start()
+            #call.start()
+            if data <=50:
+                jsonSns = {" " :data}
+                print(jsonSns)
+                s = requests.post(url=API_ENDPOINT_SNS, data=json.dumps(jsonSns))
+            else:
+
+                jsonData = {
+                    "deviceID": "ec03",
+                 "timestamp": str(time.time()),
+                 "info":{"battery-level": data
+                            }}
+                print(jsonData)
+                r = requests.post(url=API_ENDPOINT, data=json.dumps(jsonData))
+            #r = requests.post(url=API_ENDPOINT, data=json.dumps(data))
+           #  print(data)
+            print(r.text)
+
+
+
+          #  discon.disconnect()
+           # time.sleep(5)
+          #  discon.connect(mac_addr='7C:EC:79:E4:5F:89', iface=0)
+
+
+
+except Exception as e:
+    print("Error %s" % str(e))
+
+
+
